@@ -1,6 +1,7 @@
 # ElvUI_ThreatImprovedLite
 
 Plugin for ElvUI that aims to improve threat management, both in the Threat frame and in the NamePlates.
+
 The *Lite* version does not rely on AwesomeWotLK, which has been banned in many 3.3.5a servers.
 
 ![colors](https://github.com/user-attachments/assets/984a3e7e-9907-424f-aee6-8ecf2c4fd80b)
@@ -37,7 +38,8 @@ _Without_ [FrostAtom's awesome wotlk](https://github.com/FrostAtom/awesome_wotlk
 
 But we can still use `raidN-target` UnitIDs, check what `GUID` have these units and cross that with ElvUI's NamePlates frame data.
 It won't work as well, but it may be good enough.
-Caveat: we need to have mouseovered the units first for they to have a `GUID`.
+Caveat 1: we need to have mouseovered the units first for they to have a `GUID`.
+Caveat 2: if we want updates from a unit we need at least one of these to be true: a) it's your target, b) it's your mousover (now that I write this, I think I need to handle it), c) it's the target of one of the party or raid members.
 
 ### Why?
 
