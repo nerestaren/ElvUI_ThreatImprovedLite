@@ -6,7 +6,6 @@ local THREAT = E:GetModule("Threat")
 local DT = E:GetModule("DataTexts")
 local NP = E:GetModule("NamePlates")
 local pairs, select = pairs, select
-local GetNamePlateForUnit = C_NamePlate.GetNamePlateForUnit -- https://github.com/FrostAtom/awesome_wotlk
 local GetNumPartyMembers, GetNumRaidMembers = GetNumPartyMembers, GetNumRaidMembers
 local HasPetUI = HasPetUI
 local UnitName = UnitName
@@ -24,6 +23,17 @@ local UnitDetailedThreatSituation = UnitDetailedThreatSituation
 local partyUnits, raidUnits = {}, {}
 for i = 1, 4 do partyUnits[i] = "party"..i end
 for i = 1, 40 do raidUnits[i] = "raid"..i end
+
+-- Cache party/raid-N-target unit ids with the GUID of their targets.
+-- Each entry is a GUID.
+local targetNamesToGUID = {}
+
+-- Cache GUIDs of targets to the party/raid-N-target unit ids.
+-- Each entry is a linked list of these ids.
+local guidToTargetNames = {}
+
+-- Last time a GUID was checked for threat info
+local lastUpdated = {}
 
 local THREAT_SITUATIONS_TABLE = Engine.THREAT_SITUATIONS_TABLE
 local THREAT_SITUATIONS = Engine.THREAT_SITUATIONS
@@ -217,54 +227,45 @@ local HOOK_THREAT_Update = function(self, arg1, arg2)
 	end
 end
 
-local function UpdateNPThreat(unitID, shouldTryAgain)
-	local plateFrame = GetNamePlateForUnit(unitID)
-	if not plateFrame then return end
-	local elvuiPlate = plateFrame.UnitFrame
-	if not elvuiPlate then -- Compatibility with VirtualPlates
-		elvuiPlate = plateFrame:GetChildren().UnitFrame
-	end
-	if not elvuiPlate then
-		-- elvuiPlate is nil, it is sometimes created a bit later
-		if shouldTryAgain then
-			-- we try again, once
-			E:Delay(0.05, UpdateNPThreat, unitID, nil)
-		end
-		return
-	end
-	local threatSituation, myThreatPct, otherUnit, otherThreatPct = GetThreatDetails(unitID)
-	-- if not threatSituation then return end
-	if elvuiPlate.ImprovedThreatStatus ~= threatSituation then
-		elvuiPlate.ImprovedThreatStatus = threatSituation
-		NP:Update_HealthColor(elvuiPlate)
-	end
-	if elvuiPlate.ThreatPct ~= myThreatPct then
-		elvuiPlate.ThreatPct = myThreatPct
-		-- do something with ThreatPct
-	end
-end
-
-local function RemoveNPThreat(unitID)
-	local plateFrame = GetNamePlateForUnit(unitID)
-	if not plateFrame then return end
-	local elvuiPlate = plateFrame.UnitFrame
-	if not elvuiPlate then -- Compatibility with VirtualPlates
-		elvuiPlate = plateFrame:GetChildren().UnitFrame
-	end
-	if not elvuiPlate then return end
-	if elvuiPlate.ImprovedThreatStatus then
-		elvuiPlate.ImprovedThreatStatus = nil
-		NP:Update_HealthColor(elvuiPlate)
-	end
-	if elvuiPlate.ThreatPct then
-		elvuiPlate.ThreatPct = nil
-		-- do something with ThreatPct
-	end
-end
-
 local HOOK_NP_UnitDetailedThreatSituation = function(self, frame)
 	-- Override ElvUI's NP UnitDetailedThreatSituation
-	return frame.ImprovedThreatStatus
+	-- Check if we have a GUID
+	local guid = frame.guid
+	if guid then
+		-- Check if we have cached target names for this GUID
+		local unitID = guidToTargetNames[guid] and guidToTargetNames[guid].car
+		if unitID then
+			local last = lastUpdated[guid] or 0
+			if GetTime() - last >= 0.1 then
+				lastUpdated[guid] = GetTime()
+				
+				local threatSituation, myThreatPct, otherUnit, otherThreatPct = GetThreatDetails(unitID)
+				-- if not threatSituation then return end
+				if frame.ImprovedThreatStatus ~= threatSituation then
+					frame.ImprovedThreatStatus = threatSituation
+					NP:Update_HealthColor(frame)
+				end
+				--if frame.ThreatPct ~= myThreatPct then
+				--	frame.ThreatPct = myThreatPct
+				--	-- do something with ThreatPct
+				--end
+				return threatSituation
+			else
+				-- Too soon since last update
+				return frame.ImprovedThreatStatus
+			end
+		end
+	end
+	-- Fallback to default behavior
+	frame.ImprovedThreatStatus = nil
+	local r, g, b = frame.Threat:GetVertexColor()
+	if r > 0 then
+		if g > 0 then
+			if b > 0 then return 1 end
+			return 2
+		end
+		return 3
+	end
 end
 
 local HOOK_NP_Update_HealthColor = function(self, frame)
@@ -328,33 +329,51 @@ local HOOK_NP_Update_HealthColor = function(self, frame)
 	end
 end
 
+function AddTargetNameToGUID(guid, unitID)
+	-- linked list
+	guidToTargetNames[guid] = { car = unitID, cdr = guidToTargetNames[guid] }
+end
+
+function RemoveTargetNameToGUID(guid, unitID)
+	-- linked list
+	local prev = nil
+	local current = guidToTargetNames[guid]
+	while current do
+		if current.car == unitID then
+			if prev then
+				prev.cdr = current.cdr
+			else
+				-- removing head
+				guidToTargetNames[guid] = current.cdr
+			end
+			return
+		end
+		prev = current
+		current = current.cdr
+	end
+end
+
+function CacheTargetForUnit(unitID)
+	local targetUnitID = unitID .. "-target"
+	-- First, remove old cached entry
+	local oldGUID = targetNamesToGUID[unitID]
+	if oldGUID then
+		RemoveTargetNameToGUID(oldGUID, unitID)
+		targetNamesToGUID[unitID] = nil
+	end
+	-- Now, add new cached entry
+	if UnitExists(targetUnitID) then
+		local guid = UnitGUID(targetUnitID)
+		targetNamesToGUID[targetUnitID] = guid
+		AddTargetNameToGUID(guid, targetUnitID)
+	end
+end
+
 local ThreatImprovedLite = E:NewModule("ThreatImprovedLite", "AceEvent-3.0", "AceHook-3.0")
 
-local lastUpdated = {}
 function ThreatImprovedLite:Update(event, arg1, ...)
-	if event == "UNIT_THREAT_LIST_UPDATE" then
-		if arg1 ~= nil then
-			local last = lastUpdated[arg1] or 0
-			if GetTime() - last >= 0.1 then
-				lastUpdated[arg1] = GetTime()
-				UpdateNPThreat(arg1)
-			end
-		end
-	elseif event == "NAME_PLATE_UNIT_ADDED" then
-		if arg1 ~= nil then
-			if UnitCanAttack("player", arg1) and UnitAffectingCombat(arg1) then
-				lastUpdated[arg1] = GetTime()
-				UpdateNPThreat(arg1, true)
-				-- Delay needed since ElvUI plate (plate.UnitFrame) is created a few frames after this event
-				-- We will do it inside the function only if needed, instead of always
-				-- E:Delay(0.05, UpdateNPThreat, arg1)
-			end
-		end
-	elseif event == "NAME_PLATE_UNIT_REMOVED" then
-		if arg1 ~= nil then
-			lastUpdated[arg1] = nil
-			RemoveNPThreat(arg1)
-		end
+	if event == "UNIT_TARGET" then
+		CacheTargetForUnit(arg1)
 	end
 end
 
@@ -473,9 +492,7 @@ local function InsertOptions()
 end
 
 E:RegisterModule(ThreatImprovedLite:GetName(), function()
-	ThreatImprovedLite:RegisterEvent("UNIT_THREAT_LIST_UPDATE", "Update")
-	ThreatImprovedLite:RegisterEvent("NAME_PLATE_UNIT_ADDED", "Update")
-	ThreatImprovedLite:RegisterEvent("NAME_PLATE_UNIT_REMOVED", "Update")
+	ThreatImprovedLite:RegisterEvent("UNIT_TARGET", "Update")
 	ThreatImprovedLite:RawHook(THREAT, "Update", HOOK_THREAT_Update)
 	ThreatImprovedLite:RawHook(NP, "UnitDetailedThreatSituation", HOOK_NP_UnitDetailedThreatSituation)
 	ThreatImprovedLite:RawHook(NP, "Update_HealthColor", HOOK_NP_Update_HealthColor)
