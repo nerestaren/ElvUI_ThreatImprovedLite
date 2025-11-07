@@ -1,13 +1,13 @@
-# ElvUI_ThreatImproved
+# ElvUI_ThreatImprovedLite
 
 Plugin for ElvUI that aims to improve threat management, both in the Threat frame and in the NamePlates.
+The *Lite* version does not rely on AwesomeWotLK, which has been banned in many 3.3.5a servers.
 
 ![colors](https://github.com/user-attachments/assets/984a3e7e-9907-424f-aee6-8ecf2c4fd80b)
 
 ## Dependencies
 
 * [ElvUI](https://github.com/ElvUI-WotLK/ElvUI)
-* [FrostAtom's awesome wotlk](https://github.com/FrostAtom/awesome_wotlk) patch
 
 ## What does it do
 
@@ -33,7 +33,11 @@ The new, interesting situations are #5, #7, and #9. In these cases, threat is be
 
 ### How?
 
-With [FrostAtom's awesome wotlk](https://github.com/FrostAtom/awesome_wotlk), UnitIDs `NameplateX` are available. We can also listen for the event `NAME_PLATE_UNIT_ADDED`. This way, we can get a unit's nameplate and customize it according to our aggro situation.
+_Without_ [FrostAtom's awesome wotlk](https://github.com/FrostAtom/awesome_wotlk), UnitIDs `NameplateX` are not available. We also cannot listen for the event `NAME_PLATE_UNIT_ADDED`.
+
+But we can still use `raidN-target` UnitIDs, check what `GUID` have these units and cross that with ElvUI's NamePlates frame data.
+It won't work as well, but it may be good enough.
+Caveat: we need to have mouseovered the units first for they to have a `GUID`.
 
 ### Why?
 
