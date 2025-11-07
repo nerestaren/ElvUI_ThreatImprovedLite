@@ -328,10 +328,10 @@ local HOOK_NP_Update_HealthColor = function(self, frame)
 	end
 end
 
-local ThreatImproved = E:NewModule("ThreatImproved", "AceEvent-3.0", "AceHook-3.0")
+local ThreatImprovedLite = E:NewModule("ThreatImprovedLite", "AceEvent-3.0", "AceHook-3.0")
 
 local lastUpdated = {}
-function ThreatImproved:Update(event, arg1, ...)
+function ThreatImprovedLite:Update(event, arg1, ...)
 	if event == "UNIT_THREAT_LIST_UPDATE" then
 		if arg1 ~= nil then
 			local last = lastUpdated[arg1] or 0
@@ -472,13 +472,13 @@ local function InsertOptions()
 	E.Options.args.plugins.args.ThreatImproved = table
 end
 
-E:RegisterModule(ThreatImproved:GetName(), function()
-	ThreatImproved:RegisterEvent("UNIT_THREAT_LIST_UPDATE", "Update")
-	ThreatImproved:RegisterEvent("NAME_PLATE_UNIT_ADDED", "Update")
-	ThreatImproved:RegisterEvent("NAME_PLATE_UNIT_REMOVED", "Update")
-	ThreatImproved:RawHook(THREAT, "Update", HOOK_THREAT_Update)
-	ThreatImproved:RawHook(NP, "UnitDetailedThreatSituation", HOOK_NP_UnitDetailedThreatSituation)
-	ThreatImproved:RawHook(NP, "Update_HealthColor", HOOK_NP_Update_HealthColor)
+E:RegisterModule(ThreatImprovedLite:GetName(), function()
+	ThreatImprovedLite:RegisterEvent("UNIT_THREAT_LIST_UPDATE", "Update")
+	ThreatImprovedLite:RegisterEvent("NAME_PLATE_UNIT_ADDED", "Update")
+	ThreatImprovedLite:RegisterEvent("NAME_PLATE_UNIT_REMOVED", "Update")
+	ThreatImprovedLite:RawHook(THREAT, "Update", HOOK_THREAT_Update)
+	ThreatImprovedLite:RawHook(NP, "UnitDetailedThreatSituation", HOOK_NP_UnitDetailedThreatSituation)
+	ThreatImprovedLite:RawHook(NP, "Update_HealthColor", HOOK_NP_Update_HealthColor)
 	-- Disable ElvUI_Extras' UNIT_THREAT_LIST_UPDATE event: we are handling it
 	local ElvUI_Extras = E:GetModule("Extras", true)
 	if ElvUI_Extras then

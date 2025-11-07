@@ -1,10 +1,10 @@
 ## Interface: 30300
-## Title: |cff1784d1E|r|cffe5e3e3lvUI|r |cff1784d1T|r|cffe5e3e3hreat|r |cff1784d1I|r|cffe5e3e3mproved|r
+## Title: |cff1784d1E|r|cffe5e3e3lvUI|r |cff1784d1T|r|cffe5e3e3hreat|r |cff1784d1I|r|cffe5e3e3mproved|r |cff1784d1L|r|cffe5e3e3ite|r
 ## Notes: Improves threat colors to support OffTanks in Threat panel and NamePlates.
-## Version: 0.0.6
+## Version: 0.1.0
 ## Author: Nerestaren
 ## RequiredDeps: ElvUI
-## X-Website: https://github.com/nerestaren/ElvUI_ThreatImproved
+## X-Website: https://github.com/nerestaren/ElvUI_ThreatImprovedLite
 
 Libraries\Load_Libraries.xml
 Libraries\LibStub\LibStub.lua
@@ -14,4 +14,4 @@ Values.lua
 
 Locales\Load_Locales.xml
 
-ElvUI_ThreatImproved.lua
+ElvUI_ThreatImprovedLite.lua
