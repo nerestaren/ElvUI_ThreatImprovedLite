@@ -356,10 +356,10 @@ end
 function CacheTargetForUnit(unitID)
 	local targetUnitID = unitID .. "-target"
 	-- First, remove old cached entry
-	local oldGUID = targetNamesToGUID[unitID]
+	local oldGUID = targetNamesToGUID[targetUnitID]
 	if oldGUID then
-		RemoveTargetNameToGUID(oldGUID, unitID)
-		targetNamesToGUID[unitID] = nil
+		RemoveTargetNameToGUID(oldGUID, targetUnitID)
+		targetNamesToGUID[targetUnitID] = nil
 	end
 	-- Now, add new cached entry
 	if UnitExists(targetUnitID) then
