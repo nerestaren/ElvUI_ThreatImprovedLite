@@ -371,6 +371,27 @@ end
 
 local ThreatImprovedLite = E:NewModule("ThreatImprovedLite", "AceEvent-3.0", "AceHook-3.0")
 
+function ThreatImprovedLite:Debug()
+	print("---- ThreatImprovedLite Debug ----")
+	for k,v in pairs(NP.VisiblePlates) do
+		print("ID:", k, "Unit:", k.UnitName, "GUID:", k.guid, "ThreatStatus:", k.ImprovedThreatStatus)
+	end
+	print("---- Cached Targets ----")
+	for k,v in pairs(targetNamesToGUID) do
+		print("Unit:", k, "GUID:", v)
+	end
+	print("---- GUID to Target Names ----")
+	for k,v in pairs(guidToTargetNames) do
+		local list = {}
+		local current = v
+		while current do
+			table.insert(list, current.car)
+			current = current.cdr
+		end
+		print("GUID:", k, "Units:", table.concat(list, ", "))
+	end
+end
+
 function ThreatImprovedLite:Update(event, arg1, ...)
 	if event == "UNIT_TARGET" then
 		CacheTargetForUnit(arg1)
