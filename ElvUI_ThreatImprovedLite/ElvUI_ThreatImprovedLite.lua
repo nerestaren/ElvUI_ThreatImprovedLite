@@ -372,9 +372,13 @@ end
 local ThreatImprovedLite = E:NewModule("ThreatImprovedLite", "AceEvent-3.0", "AceHook-3.0")
 
 function ThreatImprovedLite:Debug()
+	function ColorToString(...)
+		local r, g, b = ...
+		return string.format("R: %.2f G: %.2f B: %.2f", r, g, b)
+	end
 	print("---- ThreatImprovedLite Debug ----")
 	for k,v in pairs(NP.VisiblePlates) do
-		print("ID:", k, "Unit:", k.UnitName, "GUID:", k.guid, "ThreatStatus:", k.ImprovedThreatStatus)
+		print("Unit:", k.UnitName, "GUID:", k.guid, "ThreatShown: ", k.Threat:IsShown(), "ThreatColor: ", k.Threat and ColorToString(k.Threat:GetVertexColor()), "UnitType: ", k.UnitType, "oldNameColor: ", k.oldName and ColorToString(k.oldName:GetTextColor()), "ThreatStatus:", k.ThreatStatus)
 	end
 	print("---- Cached Targets ----")
 	for k,v in pairs(targetNamesToGUID) do
