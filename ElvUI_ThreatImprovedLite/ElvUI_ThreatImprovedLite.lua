@@ -247,16 +247,48 @@ local HOOK_NP_UnitDetailedThreatSituation = function(self, frame)
 			end
 		end
 	end
-	-- Fallback to default behavior
-	frame.ImprovedThreatStatus = nil
-	local r, g, b = frame.Threat:GetVertexColor()
-	if r > 0 then
-		if g > 0 then
-			if b > 0 then return 1 end
-			return 2
+	-- Either a) we don't have a GUID, b) we don't have cached target names for this GUID,
+	-- so we cannot get the threat details.
+	-- Fallback to default behavior, that uses Blizzard's Glow color.
+	-- This is shown only if threat >= 100%.
+	-- * Role: NONTANK.
+	-- 1. NOTANK_LOW / NOTANK_HIGH: threat < 100% -> not shown.
+	----- (cannot differentitate between low and high threat here)
+	-- 2. NOTANK_OVER: threat >= 100%, color 1 1 0.47
+	-- 3. NOTANK_TANKING: threat >= 100%, color 1 0 0
+	-- * Role: TANK.
+	-- 1. TANK_LOW_TANK_TANKING / TANK_LOW_NOTANK_TANKING: threat < 100% -> not shown.
+	----- (cannot check who is tanking to check if it's a tank => we will suppose it is not a tank)
+	-- 2. TANK_HIGH_TANK_TANKING / TANK_HIGH_NOTANK_TANKING: threat >= 100%, color 1 1 0.47
+	----- (cannot check who is tanking to check if it's a tank => we will suppose it is not a tank)
+	-- 2. TANK_LOWTANKING_2ND_TANK / TANK_LOWTANKING_2ND_NOTANK: other with threat >= 100%, color 1 0.6 0
+	----- (cannot check the 2nd in threat to check if it's a tank => we will suppose it is not a tank)
+	-- 3. TANK_HIGHTANKING: no other with threat >= 100%, color 1 0 0
+	local iAmTank = GetUnitRole("player") == "TANK"
+	if frame.Threat:IsShown() then
+		local r, g, b = frame.Threat:GetVertexColor()
+		if r > 0 then
+			if g > 0 then
+				if b > 0 then 
+					-- currently not tanking, threat >= 100%
+					return iAmTank and THREAT_SITUATIONS.TANK_HIGH_NOTANK_TANKING or THREAT_SITUATIONS.NOTANK_OVER
+				end
+				-- currently tanking, another with threat >= 100%
+				return iAmTank and THREAT_SITUATIONS.TANK_LOWTANKING_2ND_NOTANK or THREAT_SITUATIONS.NOTANK_TANKING
+			end
+			-- currently tanking, no other with threat >= 100%
+			return iAmTank and THREAT_SITUATIONS.TANK_HIGHTANKING or THREAT_SITUATIONS.NOTANK_TANKING
 		end
-		return 3
+	else
+		if frame.UnitType == "ENEMY_NPC" then
+			local r, g = frame.oldName:GetTextColor() -- I don't really know how does this work
+			if r > 0.5 and g < 0.5 then
+				-- in combat, < 100% threat
+				return iAmTank and THREAT_SITUATIONS.TANK_LOW_NOTANK_TANKING or THREAT_SITUATIONS.NOTANK_LOW
+			end -- else, not in combat
+		end
 	end
+	return nil
 end
 
 local HOOK_NP_Update_HealthColor = function(self, frame)
