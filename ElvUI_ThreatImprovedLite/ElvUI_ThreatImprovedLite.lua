@@ -236,7 +236,7 @@ local HOOK_NP_UnitDetailedThreatSituation = function(self, frame)
 		local unitID = guidToTargetNames[guid] and guidToTargetNames[guid].car
 		if unitID then
 			local last = lastUpdated[guid] or 0
-			if GetTime() - last >= 0.1 then
+			if GetTime() - last >= 0.1 and UnitAffectingCombat(unitID) then
 				lastUpdated[guid] = GetTime()
 				
 				local threatSituation, myThreatPct, otherUnit, otherThreatPct = GetThreatDetails(unitID)
