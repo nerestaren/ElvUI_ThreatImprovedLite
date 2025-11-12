@@ -381,6 +381,10 @@ function RemoveTargetNameToGUID(guid, unitID)
 end
 
 function CacheTargetForUnit(unitID)
+	if unitID == "target" then
+		-- We do not want to cache what our target targets
+		return
+	end
 	local targetUnitID = unitID .. "-target"
 	-- First, remove old cached entry
 	local oldGUID = targetNamesToGUID[targetUnitID]
