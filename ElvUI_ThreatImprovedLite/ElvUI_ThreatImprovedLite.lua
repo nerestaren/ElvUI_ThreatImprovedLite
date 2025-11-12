@@ -374,6 +374,10 @@ function RemoveTargetNameToGUID(guid, unitID)
 		prev = current
 		current = current.cdr
 	end
+	if guidToTargetNames[guid] == nil then
+		-- noone is targetting this GUID anymore, remove from lastUpdated
+		lastUpdated[guid] = nil
+	end
 end
 
 function CacheTargetForUnit(unitID)
