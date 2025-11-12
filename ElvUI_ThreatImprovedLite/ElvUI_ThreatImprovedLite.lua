@@ -240,19 +240,10 @@ local HOOK_NP_UnitDetailedThreatSituation = function(self, frame)
 				lastUpdated[guid] = GetTime()
 				
 				local threatSituation, myThreatPct, otherUnit, otherThreatPct = GetThreatDetails(unitID)
-				-- if not threatSituation then return end
-				if frame.ImprovedThreatStatus ~= threatSituation then
-					frame.ImprovedThreatStatus = threatSituation
-					NP:Update_HealthColor(frame)
-				end
-				--if frame.ThreatPct ~= myThreatPct then
-				--	frame.ThreatPct = myThreatPct
-				--	-- do something with ThreatPct
-				--end
 				return threatSituation
 			else
-				-- Too soon since last update
-				return frame.ImprovedThreatStatus
+				-- Too soon since last update, return the same value
+				return frame.ThreatStatus
 			end
 		end
 	end
@@ -283,7 +274,7 @@ local HOOK_NP_Update_HealthColor = function(self, frame)
 	else
 		-- BEGIN CUSTOM
 		local db = NP.db.colors
-		local status = frame.ImprovedThreatStatus
+		local status = frame.ThreatStatus
 		if status then
 			local color = E.db.ThreatImproved[THREAT_SITUATIONS_TABLE[status]].color
 			scale = E.db.ThreatImproved[THREAT_SITUATIONS_TABLE[status]].scale
